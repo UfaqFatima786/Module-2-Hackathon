@@ -1,199 +1,141 @@
-// /* ============================================================
-//    QUICKSERVE — SHARED AUTH & DATA LAYER
-//    Temporary localStorage version (MVP). Will be swapped for
-//    Supabase later — every function below is a candidate to be
-//    replaced by a supabase.from(...) call without touching the
-//    pages that use it.
-// ============================================================ */
+/* ============================================================
+   QUICKSERVE — SHARED AUTH & DATA LAYER (Supabase version)
+   Load order in every page: supabase.js  ->  auth.js  ->  page-js
+============================================================ */
 
-// const QS_USERS_KEY = "qs_users";
-// const QS_CURRENT_USER_KEY = "qs_current_user";
-// const QS_BOOKINGS_KEY = "qs_bookings";
+/* ================= SESSION / PROFILE ================= */
 
+/**
+ * Returns the full profiles row for the logged-in user, or null.
+ * { id, full_name, email, phone, role, avatar_url, created_at }
+ */
+async function qsGetCurrentUser() {
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (!session) return null;
 
-// /* ================= USERS ================= */
+    const { data: profile, error } = await supabaseClient
+        .from("profiles")
+        .select("*")
+        .eq("id", session.user.id)
+        .single();
 
-// function qsGetUsers() {
-//     return JSON.parse(localStorage.getItem(QS_USERS_KEY) || "[]");
-// }
+    if (error || !profile) return null;
 
-// function qsSaveUsers(users) {
-//     localStorage.setItem(QS_USERS_KEY, JSON.stringify(users));
-// }
+    return profile;
+}
 
-// function qsFindUserByEmail(email) {
-//     return qsGetUsers().find(
-//         u => u.email.toLowerCase() === email.toLowerCase()
-//     );
-// }
+async function qsLogout() {
+    await supabaseClient.auth.signOut();
+    window.location.href = "login.html";
+}
 
-// function qsCreateUser({ name, email, phone, password, role }) {
-//     const users = qsGetUsers();
+/**
+ * Call at the top of protected pages (dashboards, profile).
+ * Redirects to login if nobody is logged in, or to the correct
+ * dashboard if the wrong role is trying to view the page.
+ * Returns the profile row (await this function).
+ */
+async function qsRequireLogin(requiredRole) {
+    const user = await qsGetCurrentUser();
 
-//     const newUser = {
-//         id: "U" + Date.now(),
-//         name,
-//         email,
-//         phone,
-//         password,
-//         role, // "customer" | "provider"
-//         createdAt: new Date().toISOString()
-//     };
+    if (!user) {
+        window.location.href = "login.html";
+        return null;
+    }
 
-//     users.push(newUser);
-//     qsSaveUsers(users);
+    if (requiredRole && user.role !== requiredRole) {
+        window.location.href =
+            user.role === "provider"
+                ? "provider-dashboard.html"
+                : "customer-dashboard.html";
+        return null;
+    }
 
-//     return newUser;
-// }
+    return user;
+}
 
-// function qsUpdateUser(id, changes) {
-//     const users = qsGetUsers();
-//     const idx = users.findIndex(u => u.id === id);
+/* ================= BOOKING ID ================= */
 
-//     if (idx === -1) return null;
+function qsGenerateBookingId() {
+    const stamp = Date.now().toString().slice(-7);
+    const rand = Math.floor(10 + Math.random() * 90);
+    return `QS-${stamp}${rand}`;
+}
 
-//     users[idx] = { ...users[idx], ...changes };
-//     qsSaveUsers(users);
+/* ================= IMAGE UPLOAD ================= */
+/*
+   Shared uploader for both buckets created in Supabase Storage:
+   - "avatars"          (user profile pictures)
+   - "provider-images"  (provider listing photos)
 
-//     // keep session in sync if it's the logged-in user
-//     const current = qsGetCurrentUser();
-//     if (current && current.id === id) {
-//         qsSetCurrentUser(users[idx]);
-//     }
+   Files are stored at  <bucket>/<userId>/<timestamp>.<ext>
+   which matches the storage RLS policies (folder name = auth.uid()).
 
-//     return users[idx];
-// }
+   Returns the public URL string, or null on failure.
+*/
+async function qsUploadImage(file, bucket, userId) {
+    if (!file) return null;
 
+    const ext = file.name.split(".").pop();
+    const path = `${userId}/${Date.now()}.${ext}`;
 
-// /* ================= SESSION ================= */
+    const { error: uploadError } = await supabaseClient
+        .storage
+        .from(bucket)
+        .upload(path, file, { upsert: true });
 
-// function qsGetCurrentUser() {
-//     return JSON.parse(localStorage.getItem(QS_CURRENT_USER_KEY) || "null");
-// }
+    if (uploadError) {
+        console.error("Upload failed:", uploadError);
+        alert("Image upload failed: " + uploadError.message);
+        return null;
+    }
 
-// function qsSetCurrentUser(user) {
-//     localStorage.setItem(QS_CURRENT_USER_KEY, JSON.stringify(user));
-// }
+    const { data } = supabaseClient
+        .storage
+        .from(bucket)
+        .getPublicUrl(path);
 
-// function qsLogout() {
-//     localStorage.removeItem(QS_CURRENT_USER_KEY);
-//     window.location.href = "index.html";
-// }
+    return data.publicUrl;
+}
 
-// /* Redirect to login if nobody is logged in. Call at top of
-//    protected pages (dashboards, profile). Returns the user. */
-// function qsRequireLogin(requiredRole) {
-//     const user = qsGetCurrentUser();
+/* ================= NAVBAR AUTH STATE ================= */
 
-//     if (!user) {
-//         window.location.href = "login.html";
-//         return null;
-//     }
+async function qsUpdateNavUI() {
+    const loginBtn =
+        document.getElementById("navLoginBtn") ||
+        document.querySelector(".login-btn");
 
-//     if (requiredRole && user.role !== requiredRole) {
-//         window.location.href =
-//             user.role === "provider"
-//                 ? "provider-dashboard.html"
-//                 : "customer-dashboard.html";
-//         return null;
-//     }
+    if (!loginBtn) return;
 
-//     return user;
-// }
+    const user = await qsGetCurrentUser();
 
+    if (!user) return;
 
-// /* ================= BOOKINGS ================= */
+    const firstName = user.full_name.split(" ")[0];
 
-// function qsGetBookings() {
-//     return JSON.parse(localStorage.getItem(QS_BOOKINGS_KEY) || "[]");
-// }
+    loginBtn.innerHTML = `<i class="fa-regular fa-circle-user"></i> ${firstName}`;
 
-// function qsSaveBookings(bookings) {
-//     localStorage.setItem(QS_BOOKINGS_KEY, JSON.stringify(bookings));
-// }
+    loginBtn.href =
+        user.role === "provider"
+            ? "provider-dashboard.html"
+            : "customer-dashboard.html";
 
-// function qsGenerateBookingId() {
-//     const stamp = Date.now().toString().slice(-7);
-//     const rand = Math.floor(10 + Math.random() * 90);
-//     return `QS-${stamp}${rand}`;
-// }
+    if (!document.getElementById("navLogoutBtn")) {
+        const logoutBtn = document.createElement("a");
 
-// function qsCreateBooking(data) {
-//     const bookings = qsGetBookings();
+        logoutBtn.href = "#";
+        logoutBtn.id = "navLogoutBtn";
+        logoutBtn.className = "login-btn";
+        logoutBtn.title = "Logout";
+        logoutBtn.innerHTML = `<i class="fa-solid fa-right-from-bracket"></i>`;
 
-//     const booking = {
-//         id: qsGenerateBookingId(),
-//         status: "Pending", // Pending -> Accepted/Rejected -> In Progress -> Completed
-//         review: null,
-//         createdAt: new Date().toISOString(),
-//         ...data
-//     };
+        logoutBtn.addEventListener("click", event => {
+            event.preventDefault();
+            qsLogout();
+        });
 
-//     bookings.push(booking);
-//     qsSaveBookings(bookings);
+        loginBtn.insertAdjacentElement("afterend", logoutBtn);
+    }
+}
 
-//     return booking;
-// }
-
-// function qsUpdateBooking(id, changes) {
-//     const bookings = qsGetBookings();
-//     const idx = bookings.findIndex(b => b.id === id);
-
-//     if (idx === -1) return null;
-
-//     bookings[idx] = { ...bookings[idx], ...changes };
-//     qsSaveBookings(bookings);
-
-//     return bookings[idx];
-// }
-
-// function qsGetBookingsForCustomer(customerId) {
-//     return qsGetBookings().filter(b => b.customerId === customerId);
-// }
-
-// function qsGetBookingsForProvider(providerName) {
-//     return qsGetBookings().filter(b => b.providerName === providerName);
-// }
-
-
-// /* ================= NAVBAR AUTH STATE ================= */
-
-// function qsUpdateNavUI() {
-//     const loginBtn =
-//         document.getElementById("navLoginBtn") ||
-//         document.querySelector(".login-btn");
-
-//     if (!loginBtn) return;
-
-//     const user = qsGetCurrentUser();
-
-//     if (!user) return;
-
-//     const firstName = user.name.split(" ")[0];
-
-//     loginBtn.innerHTML = `<i class="fa-regular fa-circle-user"></i> ${firstName}`;
-
-//     loginBtn.href =
-//         user.role === "provider"
-//             ? "provider-dashboard.html"
-//             : "customer-dashboard.html";
-
-//     if (!document.getElementById("navLogoutBtn")) {
-//         const logoutBtn = document.createElement("a");
-
-//         logoutBtn.href = "#";
-//         logoutBtn.id = "navLogoutBtn";
-//         logoutBtn.className = "login-btn";
-//         logoutBtn.title = "Logout";
-//         logoutBtn.innerHTML = `<i class="fa-solid fa-right-from-bracket"></i>`;
-
-//         logoutBtn.addEventListener("click", event => {
-//             event.preventDefault();
-//             qsLogout();
-//         });
-
-//         loginBtn.insertAdjacentElement("afterend", logoutBtn);
-//     }
-// }
-
-// document.addEventListener("DOMContentLoaded", qsUpdateNavUI);
+document.addEventListener("DOMContentLoaded", qsUpdateNavUI);

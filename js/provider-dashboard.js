@@ -1,6 +1,6 @@
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
 
-    const user = qsRequireLogin("provider");
+    const user = await qsRequireLogin("provider");
     if (!user) return;
 
     const welcomeText = document.getElementById("welcomeText");
@@ -8,25 +8,92 @@ document.addEventListener("DOMContentLoaded", () => {
     const bookingList = document.getElementById("bookingList");
     const emptyState = document.getElementById("emptyState");
 
-    welcomeText.textContent = `Welcome back, ${user.name.split(" ")[0]}! Here are your booking requests.`;
+    welcomeText.textContent = `Welcome back, ${user.full_name.split(" ")[0]}! Here are your booking requests.`;
 
     const STATUS_CLASS = {
-        "Pending": "status-pending",
-        "Accepted": "status-accepted",
-        "In Progress": "status-inprogress",
-        "Completed": "status-completed",
-        "Rejected": "status-rejected"
+        pending: "status-pending",
+        accepted: "status-accepted",
+        in_progress: "status-inprogress",
+        completed: "status-completed",
+        rejected: "status-rejected"
     };
 
-    function renderStats(bookings) {
+    const STATUS_LABEL = {
+        pending: "Pending",
+        accepted: "Accepted",
+        in_progress: "In Progress",
+        completed: "Completed",
+        rejected: "Rejected"
+    };
 
+    /* =========================================
+       CHECK PROVIDER LISTING EXISTS
+    ========================================= */
+
+    const { data: providerRow, error: providerError } = await supabaseClient
+        .from("providers")
+        .select("id, service_name")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+    if (providerError) {
+        console.error(providerError);
+    }
+
+    if (!providerRow) {
+        bookingList.innerHTML = "";
+        statsRow.innerHTML = "";
+        emptyState.style.display = "none";
+        document.querySelector(".dashboard-container").insertAdjacentHTML("beforeend", `
+            <div class="empty-state" style="display:block;">
+                <i class="fa-solid fa-circle-info"></i>
+                <p>You haven't set up your listing yet.</p>
+                <a href="provider-setup.html" class="nav-cta" style="margin-top:12px; display:inline-flex;">
+                    <i class="fa-solid fa-pen-to-square"></i> Create My Listing
+                </a>
+            </div>
+        `);
+        return;
+    }
+
+    let bookings = [];
+
+    async function loadBookings() {
+
+        bookingList.innerHTML = `<p style="padding:30px; text-align:center; color:var(--muted,#888);">Loading requests...</p>`;
+
+        const { data, error } = await supabaseClient
+            .from("bookings")
+            .select(`
+                id,
+                booking_id,
+                booking_date,
+                booking_time,
+                location,
+                description,
+                status,
+                profiles ( full_name, phone ),
+                reviews ( rating, review )
+            `)
+            .eq("provider_id", providerRow.id)
+            .order("created_at", { ascending: false });
+
+        if (error) {
+            console.error(error);
+            bookingList.innerHTML = `<p style="padding:30px; text-align:center; color:#ff5c5c;">Could not load bookings: ${error.message}</p>`;
+            return;
+        }
+
+        bookings = data || [];
+        renderBookings();
+    }
+
+    function renderStats() {
         const counts = {
             total: bookings.length,
-            pending: bookings.filter(b => b.status === "Pending").length,
-            active: bookings.filter(b =>
-                b.status === "Accepted" || b.status === "In Progress"
-            ).length,
-            completed: bookings.filter(b => b.status === "Completed").length
+            pending: bookings.filter(b => b.status === "pending").length,
+            active: bookings.filter(b => b.status === "accepted" || b.status === "in_progress").length,
+            completed: bookings.filter(b => b.status === "completed").length
         };
 
         statsRow.innerHTML = `
@@ -39,30 +106,28 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function actionsFor(booking) {
 
-        // business rules: rejected can never move forward,
-        // completed can never be edited again
-        if (booking.status === "Pending") {
+        if (booking.status === "pending") {
             return `
-                <button class="btn-accept" data-action="accept" data-booking="${booking.id}">
+                <button class="btn-accept" data-action="accepted" data-booking="${booking.id}">
                     <i class="fa-solid fa-check"></i> Accept
                 </button>
-                <button class="btn-reject" data-action="reject" data-booking="${booking.id}">
+                <button class="btn-reject" data-action="rejected" data-booking="${booking.id}">
                     <i class="fa-solid fa-xmark"></i> Reject
                 </button>
             `;
         }
 
-        if (booking.status === "Accepted") {
+        if (booking.status === "accepted") {
             return `
-                <button class="btn-progress" data-action="progress" data-booking="${booking.id}">
+                <button class="btn-progress" data-action="in_progress" data-booking="${booking.id}">
                     <i class="fa-solid fa-person-digging"></i> Mark In Progress
                 </button>
             `;
         }
 
-        if (booking.status === "In Progress") {
+        if (booking.status === "in_progress") {
             return `
-                <button class="btn-progress" data-action="complete" data-booking="${booking.id}">
+                <button class="btn-progress" data-action="completed" data-booking="${booking.id}">
                     <i class="fa-solid fa-flag-checkered"></i> Mark Completed
                 </button>
             `;
@@ -74,27 +139,31 @@ document.addEventListener("DOMContentLoaded", () => {
     function renderBookingCard(booking) {
 
         const statusClass = STATUS_CLASS[booking.status] || "status-pending";
+        const statusLabel = STATUS_LABEL[booking.status] || booking.status;
+        const customerName = booking.profiles?.full_name || "Customer";
+        const customerPhone = booking.profiles?.phone || "N/A";
+        const review = Array.isArray(booking.reviews) ? booking.reviews[0] : booking.reviews;
 
         return `
             <div class="booking-card" id="card-${booking.id}">
                 <div class="booking-main">
-                    <span class="booking-id">#${booking.id}</span>
-                    <h3>${booking.service} — ${booking.customerName}</h3>
+                    <span class="booking-id">#${booking.booking_id}</span>
+                    <h3>${providerRow.service_name} — ${customerName}</h3>
                     <div class="booking-meta">
-                        <span><i class="fa-regular fa-calendar"></i> ${booking.date || "N/A"}</span>
-                        <span><i class="fa-solid fa-phone"></i> ${booking.customerPhone || "N/A"}</span>
-                        <span><i class="fa-solid fa-location-dot"></i> ${booking.address || "N/A"}</span>
+                        <span><i class="fa-regular fa-calendar"></i> ${booking.booking_date || "N/A"} ${booking.booking_time || ""}</span>
+                        <span><i class="fa-solid fa-phone"></i> ${customerPhone}</span>
+                        <span><i class="fa-solid fa-location-dot"></i> ${booking.location || "N/A"}</span>
                     </div>
-                    ${booking.details ? `<p style="margin-top:10px;font-size:13px;color:var(--muted);">${booking.details}</p>` : ""}
-                    ${booking.review ? `
+                    ${booking.description ? `<p style="margin-top:10px;font-size:13px;color:var(--muted);">${booking.description}</p>` : ""}
+                    ${review ? `
                         <div class="submitted-review" style="margin-top:10px;">
-                            ${"★".repeat(booking.review.rating)}${"☆".repeat(5 - booking.review.rating)}
-                            ${booking.review.comment ? `<span>"${booking.review.comment}"</span>` : ""}
+                            ${"★".repeat(review.rating)}${"☆".repeat(5 - review.rating)}
+                            ${review.review ? `<span>"${review.review}"</span>` : ""}
                         </div>
                     ` : ""}
                 </div>
                 <div style="display:flex; flex-direction:column; gap:12px; align-items:flex-end;">
-                    <span class="status-badge ${statusClass}">${booking.status}</span>
+                    <span class="status-badge ${statusClass}">${statusLabel}</span>
                     <div class="booking-actions">${actionsFor(booking)}</div>
                 </div>
             </div>
@@ -103,10 +172,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function renderBookings() {
 
-        const bookings = qsGetBookingsForProvider(user.name)
-            .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-
-        renderStats(bookings);
+        renderStats();
 
         if (bookings.length === 0) {
             bookingList.innerHTML = "";
@@ -115,9 +181,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         emptyState.style.display = "none";
-
         bookingList.innerHTML = bookings.map(renderBookingCard).join("");
-
         attachActionHandlers();
     }
 
@@ -125,25 +189,28 @@ document.addEventListener("DOMContentLoaded", () => {
 
         bookingList.querySelectorAll("[data-action]").forEach(btn => {
 
-            btn.addEventListener("click", () => {
+            btn.addEventListener("click", async () => {
 
                 const bookingId = btn.dataset.booking;
-                const action = btn.dataset.action;
+                const newStatus = btn.dataset.action;
 
-                const statusMap = {
-                    accept: "Accepted",
-                    reject: "Rejected",
-                    progress: "In Progress",
-                    complete: "Completed"
-                };
+                btn.disabled = true;
 
-                qsUpdateBooking(bookingId, { status: statusMap[action] });
+                const { error } = await supabaseClient
+                    .from("bookings")
+                    .update({ status: newStatus })
+                    .eq("id", bookingId);
 
-                renderBookings();
+                if (error) {
+                    alert("Could not update booking: " + error.message);
+                    btn.disabled = false;
+                    return;
+                }
+
+                await loadBookings();
             });
         });
     }
 
-    renderBookings();
-
+    await loadBookings();
 });

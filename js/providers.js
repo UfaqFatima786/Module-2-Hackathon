@@ -1,451 +1,225 @@
-document.addEventListener("DOMContentLoaded", () => {
-    const providersGrid =
-        document.getElementById("providersGrid");
+document.addEventListener("DOMContentLoaded", async () => {
 
-    const providerCards =
-        document.querySelectorAll(".provider-card");
+    const providersGrid = document.getElementById("providersGrid");
+    const providerSearch = document.getElementById("providerSearch");
+    const locationFilter = document.getElementById("locationFilter");
+    const ratingFilter = document.getElementById("ratingFilter");
+    const resetFilters = document.getElementById("resetFilters");
+    const resultsCount = document.getElementById("resultsCount");
+    const noResults = document.getElementById("noResults");
 
-    const providerSearch =
-        document.getElementById("providerSearch");
-
-    const locationFilter =
-        document.getElementById("locationFilter");
-
-    const ratingFilter =
-        document.getElementById("ratingFilter");
-
-    const resetFilters =
-        document.getElementById("resetFilters");
-
-    const resultsCount =
-        document.getElementById("resultsCount");
-
-    const noResults =
-        document.getElementById("noResults");
-
-    const breadcrumbService =
-        document.getElementById("breadcrumbService");
-
-    const serviceBadge =
-        document.getElementById("serviceBadge");
-
-    const serviceTitle =
-        document.getElementById("serviceTitle");
-
-    const headingService =
-        document.getElementById("headingService");
-
+    const breadcrumbService = document.getElementById("breadcrumbService");
+    const serviceBadge = document.getElementById("serviceBadge");
+    const serviceTitle = document.getElementById("serviceTitle");
+    const headingService = document.getElementById("headingService");
 
     /* =========================================
-       GET SERVICE FROM URL
+       GET SERVICE FROM URL (?service=Cleaning)
     ========================================= */
 
-    const params =
-        new URLSearchParams(window.location.search);
-
-    let selectedService =
-        params.get("service");
-
+    const params = new URLSearchParams(window.location.search);
+    let selectedService = params.get("service");
 
     if (selectedService) {
-
-        selectedService =
-            decodeURIComponent(selectedService)
-                .toLowerCase()
-                .trim()
-                .replace(/-/g, " ");
-
+        selectedService = decodeURIComponent(selectedService).trim();
     }
-
-
-    console.log(
-        "Selected Service:",
-        selectedService
-    );
-
-
-    /* =========================================
-       FORMAT SERVICE NAME
-    ========================================= */
-
-    function formatServiceName(service) {
-
-        if (!service) {
-            return "Professionals";
-        }
-
-        return service
-            .split(" ")
-            .map(word =>
-                word.charAt(0).toUpperCase() +
-                word.slice(1)
-            )
-            .join(" ");
-
-    }
-
-
-    /* =========================================
-       UPDATE SERVICE UI
-    ========================================= */
 
     function updateServiceUI() {
+        const label = selectedService || "Professionals";
 
-        const formattedService =
-            formatServiceName(selectedService);
+        if (breadcrumbService) breadcrumbService.textContent = label;
+        if (serviceBadge) serviceBadge.textContent = selectedService ? label : "All Services";
+        if (serviceTitle) serviceTitle.textContent = selectedService ? label : "professional";
+        if (headingService) headingService.textContent = label;
 
-
-        if (selectedService) {
-
-            breadcrumbService.textContent =
-                formattedService;
-
-            serviceBadge.textContent =
-                formattedService;
-
-            serviceTitle.textContent =
-                formattedService;
-
-            headingService.textContent =
-                formattedService;
-
-            document.title =
-                `QuickServe | ${formattedService} Providers`;
-
-        } else {
-
-            breadcrumbService.textContent =
-                "Providers";
-
-            serviceBadge.textContent =
-                "All Services";
-
-            serviceTitle.textContent =
-                "professional";
-
-            headingService.textContent =
-                "Professionals";
-
-        }
-
+        document.title = selectedService
+            ? `QuickServe | ${label} Providers`
+            : "QuickServe | Find Providers";
     }
 
-
     /* =========================================
-       FILTER PROVIDERS
+       FETCH PROVIDERS FROM SUPABASE
     ========================================= */
 
-    function filterProviders() {
+    let allProviders = [];
 
-        const search =
-            providerSearch
-                ? providerSearch.value
-                    .trim()
-                    .toLowerCase()
-                : "";
+    async function loadProviders() {
 
-        const location =
-            locationFilter
-                ? locationFilter.value.toLowerCase()
-                : "all";
+        providersGrid.innerHTML = `<p style="padding:40px; text-align:center; color:var(--muted, #888);">Loading providers...</p>`;
 
-        const rating =
-            ratingFilter
-                ? ratingFilter.value
-                : "all";
+        const { data, error } = await supabaseClient
+            .from("providers")
+            .select(`
+                id,
+                service_name,
+                location,
+                experience,
+                price,
+                rating,
+                description,
+                image_url,
+                profiles ( full_name )
+            `)
+            .order("rating", { ascending: false });
 
+        if (error) {
+            console.error(error);
+            providersGrid.innerHTML = `<p style="padding:40px; text-align:center; color:#ff5c5c;">Could not load providers: ${error.message}</p>`;
+            return;
+        }
 
-        let visibleCount = 0;
+        allProviders = data || [];
+        renderProviders();
+    }
 
+    function initials(name) {
+        if (!name) return "?";
+        return name.split(" ").map(p => p[0]).join("").slice(0, 2).toUpperCase();
+    }
 
-        providerCards.forEach(card => {
+    function providerCardHTML(p) {
 
-            const cardService =
-                (card.dataset.service || "")
-                    .toLowerCase()
-                    .trim();
+        const name = p.profiles?.full_name || "Provider";
+        const ratingValue = p.rating ? Number(p.rating).toFixed(1) : "New";
+        const avatarStyle = p.image_url
+            ? `background-image:url('${p.image_url}'); background-size:cover; background-position:center;`
+            : "";
 
+        return `
+            <article
+                class="provider-card"
+                data-name="${name.toLowerCase()}"
+                data-service="${(p.service_name || "").toLowerCase()}"
+                data-location="${(p.location || "").toLowerCase()}"
+                data-rating="${p.rating || 0}"
+                data-id="${p.id}">
 
-            const cardName =
-                (card.dataset.name || "")
-                    .toLowerCase();
+                <div class="provider-top">
+                    <div class="provider-avatar" style="${avatarStyle}">
+                        ${p.image_url ? "" : initials(name)}
+                    </div>
+                    <span class="verified">
+                        <i class="fa-solid fa-circle-check"></i>
+                        Verified
+                    </span>
+                </div>
 
+                <div class="provider-info">
+                    <h3>${name}</h3>
+                    <span class="provider-role">${p.service_name || ""}</span>
 
-            const cardLocation =
-                (card.dataset.location || "")
-                    .toLowerCase();
+                    <div class="rating">
+                        <i class="fa-solid fa-star"></i>
+                        <strong>${ratingValue}</strong>
+                    </div>
 
+                    <div class="provider-meta">
+                        <span><i class="fa-solid fa-location-dot"></i> ${p.location || "N/A"}</span>
+                        <span><i class="fa-solid fa-briefcase"></i> ${p.experience || 0} Years</span>
+                    </div>
 
-            const cardRating =
-                parseFloat(
-                    card.dataset.rating || "0"
-                );
+                    <div class="provider-bottom">
+                        <div class="price">
+                            <small>Starting from</small>
+                            <strong>PKR ${Number(p.price || 0).toLocaleString()}</strong>
+                        </div>
 
+                        <button class="profile-btn" data-provider-id="${p.id}">
+                            View Profile
+                            <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </article>
+        `;
+    }
 
-            const cardSkill =
-                (card.dataset.skill || "")
-                    .toLowerCase();
+    /* =========================================
+       FILTER + RENDER
+    ========================================= */
 
+    function renderProviders() {
 
-            /* -----------------------------------------
-               SERVICE MATCH
-            ----------------------------------------- */
+        const search = providerSearch ? providerSearch.value.trim().toLowerCase() : "";
+        const location = locationFilter ? locationFilter.value.toLowerCase() : "all";
+        const rating = ratingFilter ? ratingFilter.value : "all";
 
-            let serviceMatch = true;
+        const filtered = allProviders.filter(p => {
 
-            if (selectedService) {
+            const name = (p.profiles?.full_name || "").toLowerCase();
+            const service = (p.service_name || "").toLowerCase();
+            const loc = (p.location || "").toLowerCase();
+            const ratingValue = parseFloat(p.rating || 0);
 
-                serviceMatch =
-                    cardService === selectedService;
+            const serviceMatch = selectedService
+                ? service === selectedService.toLowerCase()
+                : true;
 
-            }
+            const searchMatch = search
+                ? name.includes(search) || service.includes(search)
+                : true;
 
+            const locationMatch = location !== "all" ? loc === location : true;
+            const ratingMatch = rating !== "all" ? ratingValue >= parseFloat(rating) : true;
 
-            /* -----------------------------------------
-               SEARCH MATCH
-            ----------------------------------------- */
-
-            let searchMatch = true;
-
-            if (search) {
-
-                searchMatch =
-                    cardName.includes(search) ||
-                    cardSkill.includes(search) ||
-                    cardService.includes(search);
-
-            }
-
-
-            /* -----------------------------------------
-               LOCATION MATCH
-            ----------------------------------------- */
-
-            let locationMatch = true;
-
-            if (location !== "all") {
-
-                locationMatch =
-                    cardLocation === location;
-
-            }
-
-
-            /* -----------------------------------------
-               RATING MATCH
-            ----------------------------------------- */
-
-            let ratingMatch = true;
-
-            if (rating !== "all") {
-
-                ratingMatch =
-                    cardRating >=
-                    parseFloat(rating);
-
-            }
-
-
-            /* -----------------------------------------
-               FINAL MATCH
-            ----------------------------------------- */
-
-            const show =
-                serviceMatch &&
-                searchMatch &&
-                locationMatch &&
-                ratingMatch;
-
-
-            if (show) {
-
-                card.style.display = "";
-                visibleCount++;
-
-            } else {
-
-                card.style.display = "none";
-
-            }
-
+            return serviceMatch && searchMatch && locationMatch && ratingMatch;
         });
 
+        if (resultsCount) resultsCount.textContent = filtered.length;
 
-        /* =========================================
-           UPDATE COUNT
-        ========================================= */
-
-        if (resultsCount) {
-
-            resultsCount.textContent =
-                visibleCount;
-
+        if (filtered.length === 0) {
+            providersGrid.innerHTML = "";
+            if (noResults) noResults.style.display = "block";
+            return;
         }
 
+        if (noResults) noResults.style.display = "none";
 
-        /* =========================================
-           NO RESULTS
-        ========================================= */
+        providersGrid.innerHTML = filtered.map(providerCardHTML).join("");
 
-        if (noResults) {
-
-            noResults.style.display =
-                visibleCount === 0
-                    ? "block"
-                    : "none";
-
-        }
-
+        // wire up "View Profile" buttons
+        providersGrid.querySelectorAll(".profile-btn").forEach(btn => {
+            btn.addEventListener("click", () => {
+                const id = btn.dataset.providerId;
+                window.location.href = `providers-profile.html?id=${encodeURIComponent(id)}`;
+            });
+        });
     }
 
-
     /* =========================================
-       SEARCH
+       FILTER EVENTS
     ========================================= */
 
-    if (providerSearch) {
-
-        providerSearch.addEventListener(
-            "input",
-            filterProviders
-        );
-
-    }
-
-
-    /* =========================================
-       LOCATION
-    ========================================= */
-
-    if (locationFilter) {
-
-        locationFilter.addEventListener(
-            "change",
-            filterProviders
-        );
-
-    }
-
-
-    /* =========================================
-       RATING
-    ========================================= */
-
-    if (ratingFilter) {
-
-        ratingFilter.addEventListener(
-            "change",
-            filterProviders
-        );
-
-    }
-
-
-    /* =========================================
-       RESET
-    ========================================= */
+    if (providerSearch) providerSearch.addEventListener("input", renderProviders);
+    if (locationFilter) locationFilter.addEventListener("change", renderProviders);
+    if (ratingFilter) ratingFilter.addEventListener("change", renderProviders);
 
     if (resetFilters) {
-
-        resetFilters.addEventListener(
-            "click",
-            () => {
-
-                if (providerSearch) {
-                    providerSearch.value = "";
-                }
-
-                if (locationFilter) {
-                    locationFilter.value = "all";
-                }
-
-                if (ratingFilter) {
-                    ratingFilter.value = "all";
-                }
-
-                filterProviders();
-
-            }
-        );
-
+        resetFilters.addEventListener("click", () => {
+            if (providerSearch) providerSearch.value = "";
+            if (locationFilter) locationFilter.value = "all";
+            if (ratingFilter) ratingFilter.value = "all";
+            selectedService = null;
+            updateServiceUI();
+            renderProviders();
+        });
     }
-
-
-    /* =========================================
-       VIEW PROVIDER PROFILE
-    ========================================= */
-
-    const profileButtons =
-        document.querySelectorAll(".profile-btn");
-
-
-    profileButtons.forEach(button => {
-
-        button.addEventListener(
-            "click",
-            () => {
-
-                const provider =
-                    button.dataset.provider;
-
-                if (!provider) {
-                    return;
-                }
-
-
-                console.log(
-                    "Selected Provider:",
-                    provider
-                );
-
-
-                window.location.href =
-                    `providers-profile.html?provider=${encodeURIComponent(provider)}`;
-
-            }
-        );
-
-    });
-
 
     /* =========================================
        MOBILE MENU
     ========================================= */
 
-    const menuToggle =
-        document.getElementById("menuToggle");
-
-    const navLinks =
-        document.querySelector(".nav-links");
-
+    const menuToggle = document.getElementById("menuToggle");
+    const navLinks = document.querySelector(".nav-links");
 
     if (menuToggle && navLinks) {
-
-        menuToggle.addEventListener(
-            "click",
-            () => {
-
-                navLinks.classList.toggle(
-                    "show"
-                );
-
-            }
-        );
-
+        menuToggle.addEventListener("click", () => navLinks.classList.toggle("show"));
     }
 
-
     /* =========================================
-       INITIALIZE
+       INIT
     ========================================= */
 
     updateServiceUI();
-
-    filterProviders();
-
-
-    console.log(
-        "QuickServe Providers Loaded"
-    );
-
+    await loadProviders();
 });

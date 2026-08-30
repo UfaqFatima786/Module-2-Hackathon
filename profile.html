@@ -59,6 +59,11 @@
 
     <div class="profile-page-avatar" id="profileAvatarInitials">--</div>
 
+    <input type="file" id="avatarInput" accept="image/*" style="display:none;">
+    <button type="button" class="btn-secondary" id="changePhotoBtn" style="margin: 10px auto 0; display:block;">
+        <i class="fa-solid fa-camera"></i> Change Photo
+    </button>
+
     <h1 id="profileFullName">Your Name</h1>
     <span class="profile-role-tag" id="profileRoleTag">customer</span>
 
@@ -109,8 +114,10 @@
 
 </main>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase.js"></script>
 <script src="js/auth.js"></script>
-<script src="js/profile.js"></script>
+<script src="js/profile1.js"></script>
 
 </body>
 </html>

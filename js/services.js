@@ -5,6 +5,10 @@ document.addEventListener("DOMContentLoaded", () => {
     const serviceCount = document.getElementById("serviceCount");
     const noResults = document.getElementById("noResults");
 
+    // ==========================================
+    // SEARCH SERVICES
+    // ==========================================
+
     function searchServices() {
 
         const search = searchInput
@@ -37,6 +41,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (matches) {
 
                 card.style.display = "";
+
                 count++;
 
             } else {
@@ -52,15 +57,18 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         if (noResults) {
+
             noResults.style.display =
                 count === 0 ? "block" : "none";
+
         }
+
     }
 
 
-    /* =========================================
-       SEARCH EVENT
-    ========================================= */
+    // ==========================================
+    // SEARCH EVENT
+    // ==========================================
 
     if (searchInput) {
 
@@ -72,9 +80,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 
-    /* =========================================
-       SERVICE CARD → PROVIDERS
-    ========================================= */
+    // ==========================================
+    // SERVICE CLICK
+    // ==========================================
 
     serviceCards.forEach(card => {
 
@@ -87,19 +95,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 return;
             }
 
-            console.log(
-                "Selected Service:",
-                service
-            );
-
-            /*
-                Example:
-
-                Plumbing
-                ↓
-                providers.html?service=plumbing
-            */
-
             window.location.href =
                 `providers.html?service=${encodeURIComponent(service)}`;
 
@@ -108,9 +103,9 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
 
-    /* =========================================
-       MOBILE MENU
-    ========================================= */
+    // ==========================================
+    // MOBILE MENU
+    // ==========================================
 
     const menuToggle =
         document.getElementById("menuToggle");

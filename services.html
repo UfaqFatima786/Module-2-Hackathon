@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>QuickServe | Choose a Service</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap"
+        rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="css/services.css">
+</head>
+
+<body>
+    <header class="navbar">
+
+        <div class="nav-container">
+
+            <a href="index.html" class="logo">
+
+                <span class="logo-icon">
+                    <i class="fa-solid fa-bolt"></i>
+                </span>
+
+                <span>
+                    Quick<span>Serve</span>
+                </span>
+
+            </a>
+
+
+            <nav class="nav-links">
+
+                <a href="index.html">
+                    Home
+                </a>
+
+                <a href="services.html" class="active">
+                    Services
+                </a>
+
+                <a href="#">
+                    How It Works
+                </a>
+
+                <a href="#">
+                    Become a Provider
+                </a>
+
+            </nav>
+
+
+            <div class="nav-actions">
+
+                <a href="login.html" class="login-btn" id="navLoginBtn">
+                    <i class="fa-regular fa-user"></i>
+                    Login
+                </a>
+
+                <a href="services.html" class="nav-cta">
+                    Get Started
+                    <i class="fa-solid fa-arrow-right"></i>
+                </a>
+
+            </div>
+
+
+            <button class="menu-toggle" id="menuToggle">
+
+                <i class="fa-solid fa-bars"></i>
+
+            </button>
+
+        </div>
+
+    </header>
+
+
+
+    <!-- ================= PAGE HEADER ================= -->
+
+    <main>
+
+        <section class="page-header">
+
+            <div class="page-header-content">
+
+                <div class="breadcrumb">
+
+                    <a href="index.html">
+                        Home
+                    </a>
+
+                    <i class="fa-solid fa-chevron-right"></i>
+
+                    <span>Services</span>
+
+                </div>
+
+
+                <span class="section-tag">
+                    <i class="fa-solid fa-sparkles"></i>
+                    FIND THE RIGHT SERVICE
+                </span>
+
+
+                <h1>
+                    What do you need
+                    <span>help with?</span>
+                </h1>
+
+
+                <p>
+                    Choose a service category and discover trusted
+                    professionals near you.
+                </p>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- ================= SEARCH ================= -->
+
+        <section class="service-search-section">
+
+            <div class="search-wrapper">
+
+                <i class="fa-solid fa-magnifying-glass"></i>
+
+                <input
+                    type="text"
+                    id="serviceSearch"
+                    placeholder="Search for a service..."
+                    autocomplete="off">
+
+            </div>
+
+        </section>
+
+
+
+        <!-- ================= SERVICES ================= -->
+
+        <section class="services-section">
+
+            <div class="section-container">
+
+
+                <div class="section-top">
+
+                    <div>
+
+                        <span class="section-tag">
+                            POPULAR CATEGORIES
+                        </span>
+
+                        <h2>
+                            Explore our
+                            <span>services</span>
+                        </h2>
+
+                    </div>
+
+
+                    <span id="serviceCount" class="service-count">
+                        12 Services
+                    </span>
+
+                </div>
+
+
+
+                <div class="services-grid" id="servicesGrid">
+
+
+                    <!-- Cleaning -->
+
+                    <article
+                        class="service-card"
+                        data-service="cleaning">
+
+                        <div class="service-icon">
+                            <i class="fa-solid fa-broom"></i>
+                        </div>
+
+                        <div class="service-content">
+
+                            <h3>
+                                Home Cleaning
+                            </h3>
+
+                            <p>
+                                Professional cleaning for homes,
+                                apartments and offices.
+                            </p>
+
+                            <span class="service-link">
+                                Find Providers
+                                <i class="fa-solid fa-arrow-right"></i>
+                            </span>
+
+                        </div>
+
+                    </article>
+
+
+
+                    <!-- Plumbing -->
+
+                    <article
+                        class="service-card"
+                        data-service="plumbing">
+
+                        <div class="service-icon">
+                            <i class="fa-solid fa-faucet-drip"></i>
+                        </div>
+
+                        <div class="service-content">
+
+                            <h3>
+                                Plumbing
+                            </h3>
+
+                            <p>
+                                Get experienced plumbers for
+                                repairs and installations.
+                            </p>
+
+                            <span class="service-link">
+                                Find Providers
+                                <i class="fa-solid fa-arrow-right"></i>
+                            </span>
+
+                        </div>
+
+                    </article>
+
+
+
+                    <!-- Electrician -->
+
+                    <article
+                        class="service-card"
+                        data-service="electrician">
+
+                        <div class="service-icon">
+                            <i class="fa-solid fa-bolt"></i>
+                        </div>
+
+                        <div class="service-content">
+
+                            <h3>
+                                Electrician
+                            </h3>
+
+                            <p>
+                                Reliable electrical repair and
+                                installation services.
+                            </p>
+
+                            <span class="service-link">
+                                Find Providers
+                                <i class="fa-solid fa-arrow-right"></i>
+                            </span>
+
+                        </div>
+
+                    </article>
+
+
+
+                    <!-- AC -->
+
+                    <article
+                        class="service-card"
+                        data-service="ac repair">
+
+                        <div class="service-icon">
+                            <i class="fa-solid fa-snowflake"></i>
+                        </div>
+
+                        <div class="service-content">
+
+                            <h3>
+                                AC Repair
+                            </h3>
+
+                            <p>
+                                AC maintenance, repair and
+                                installation from professionals.
+                            </p>
+
+                            <span class="service-link">
+                                Find Providers
+                                <i class="fa-solid fa-arrow-right"></i>
+                            </span>
+
+                        </div>
+
+                    </article>
+
+
+
+                    <!-- Appliances -->
+
+                    <article
+                        class="service-card"
+                        data-service="appliance repair">
+
+                        <div class="service-icon">
+                            <i class="fa-solid fa-plug"></i>
+                        </div>
+
+                        <div class="service-content">
+
+                            <h3>
+                                Appliance Repair
+                            </h3>
+
+                            <p>
+                                Repair services for your everyday
+                                home appliances.
+                            </p>
+
+                            <span class="service-link">
+                                Find Providers
+                                <i class="fa-solid fa-arrow-right"></i>
+                            </span>
+
+                        </div>
+
+                    </article>
+
+
+
+                    <!-- Beauty -->
+
+                    <article
+                        class="service-card"
+                        data-service="beauty salon">
+
+                        <div class="service-icon">
+                            <i class="fa-solid fa-scissors"></i>
+                        </div>
+
+                        <div class="service-content">
+
+                            <h3>
+                                Beauty & Salon
+                            </h3>
+
+                            <p>
+                                Book professional beauty and
+                                salon services.
+                            </p>
+
+                            <span class="service-link">
+                                Find Providers
+                                <i class="fa-solid fa-arrow-right"></i>
+                            </span>
+
+                        </div>
+
+                    </article>
+
+
+
+                    <!-- Painting -->
+
+                    <article
+                        class="service-card"
+                        data-service="painting">
+
+                        <div class="service-icon">
+                            <i class="fa-solid fa-paint-roller"></i>
+                        </div>
+
+                        <div class="service-content">
+
+                            <h3>
+                                Painting
+                            </h3>
+
+                            <p>
+                                Transform your space with
+                                professional painters.
+                            </p>
+
+                            <span class="service-link">
+                                Find Providers
+                                <i class="fa-solid fa-arrow-right"></i>
+                            </span>
+
+                        </div>
+
+                    </article>
+
+
+
+                    <!-- Moving -->
+
+                    <article
+                        class="service-card"
+                        data-service="moving">
+
+                        <div class="service-icon">
+                            <i class="fa-solid fa-truck-moving"></i>
+                        </div>
+
+                        <div class="service-content">
+
+                            <h3>
+                                Moving Services
+                            </h3>
+
+                            <p>
+                                Make your home or office move
+                                simple and stress-free.
+                            </p>
+
+                            <span class="service-link">
+                                Find Providers
+                                <i class="fa-solid fa-arrow-right"></i>
+                            </span>
+
+                        </div>
+
+                    </article>
+
+
+
+                    <!-- Auto -->
+
+                    <article
+                        class="service-card"
+                        data-service="auto services">
+
+                        <div class="service-icon">
+                            <i class="fa-solid fa-car"></i>
+                        </div>
+
+                        <div class="service-content">
+
+                            <h3>
+                                Auto Services
+                            </h3>
+
+                            <p>
+                                Find mechanics and professionals
+                                for vehicle services.
+                            </p>
+
+                            <span class="service-link">
+                                Find Providers
+                                <i class="fa-solid fa-arrow-right"></i>
+                            </span>
+
+                        </div>
+
+                    </article>
+
+
+
+                    <!-- Tech -->
+
+                    <article
+                        class="service-card"
+                        data-service="computer mobile repair">
+
+                        <div class="service-icon">
+                            <i class="fa-solid fa-laptop"></i>
+                        </div>
+
+                        <div class="service-content">
+
+                            <h3>
+                                Computer & Mobile
+                            </h3>
+
+                            <p>
+                                Professional computer and mobile
+                                repair services.
+                            </p>
+
+                            <span class="service-link">
+                                Find Providers
+                                <i class="fa-solid fa-arrow-right"></i>
+                            </span>
+
+                        </div>
+
+                    </article>
+
+
+
+                    <!-- Tutor -->
+
+                    <article
+                        class="service-card"
+                        data-service="tutoring">
+
+                        <div class="service-icon">
+                            <i class="fa-solid fa-graduation-cap"></i>
+                        </div>
+
+                        <div class="service-content">
+
+                            <h3>
+                                Tutoring
+                            </h3>
+
+                            <p>
+                                Find tutors for school, university
+                                and professional learning.
+                            </p>
+
+                            <span class="service-link">
+                                Find Providers
+                                <i class="fa-solid fa-arrow-right"></i>
+                            </span>
+
+                        </div>
+
+                    </article>
+
+
+
+                    <!-- Other -->
+
+                    <article
+                        class="service-card"
+                        data-service="other services">
+
+                        <div class="service-icon">
+                            <i class="fa-solid fa-ellipsis"></i>
+                        </div>
+
+                        <div class="service-content">
+
+                            <h3>
+                                Other Services
+                            </h3>
+
+                            <p>
+                                Can't find what you need?
+                                Explore more services.
+                            </p>
+
+                            <span class="service-link">
+                                Find Providers
+                                <i class="fa-solid fa-arrow-right"></i>
+                            </span>
+
+                        </div>
+
+                    </article>
+
+
+                </div>
+
+
+
+                <!-- NO RESULTS -->
+
+                <div
+                    class="no-results"
+                    id="noResults">
+
+                    <div class="no-results-icon">
+
+                        <i class="fa-solid fa-magnifying-glass"></i>
+
+                    </div>
+
+                    <h3>
+                        No service found
+                    </h3>
+
+                    <p>
+                        Try searching for another service.
+                    </p>
+
+                </div>
+
+
+            </div>
+
+        </section>
+
+
+
+        <!-- ================= CTA ================= -->
+
+        <section class="provider-cta">
+
+            <div class="cta-container">
+
+                <div class="cta-content">
+
+                    <span class="section-tag light-tag">
+                        ARE YOU A PROFESSIONAL?
+                    </span>
+
+                    <h2>
+                        Turn your skills into
+                        <span>opportunities.</span>
+                    </h2>
+
+                    <p>
+                        Join QuickServe and connect with people
+                        looking for your services.
+                    </p>
+
+                    <a href="#" class="white-btn">
+
+                        Become a Provider
+
+                        <i class="fa-solid fa-arrow-right"></i>
+
+                    </a>
+
+                </div>
+
+
+                <div class="cta-icon">
+
+                    <i class="fa-solid fa-handshake"></i>
+
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+
+    <!-- ================= FOOTER ================= -->
+
+    <footer class="footer">
+
+        <div class="footer-container">
+
+
+            <div class="footer-brand">
+
+                <a href="index.html" class="logo">
+
+                    <span class="logo-icon">
+                        <i class="fa-solid fa-bolt"></i>
+                    </span>
+
+                    <span>
+                        Quick<span>Serve</span>
+                    </span>
+
+                </a>
+
+                <p>
+                    Connecting people with trusted local
+                    service professionals — quickly and easily.
+                </p>
+
+            </div>
+
+
+            <div class="footer-column">
+
+                <h4>Quick Links</h4>
+
+                <a href="index.html">Home</a>
+
+                <a href="services.html">Services</a>
+
+                <a href="#">How It Works</a>
+
+            </div>
+
+
+            <div class="footer-column">
+
+                <h4>For Providers</h4>
+
+                <a href="#">Become a Provider</a>
+
+                <a href="#">Provider Login</a>
+
+            </div>
+
+
+            <div class="footer-column">
+
+                <h4>Support</h4>
+
+                <a href="#">Help Center</a>
+
+                <a href="#">Contact Us</a>
+
+                <a href="#">Privacy Policy</a>
+
+            </div>
+
+
+        </div>
+
+
+        <div class="footer-bottom">
+
+            <span>
+                © 2026 QuickServe. All rights reserved.
+            </span>
+
+            <span>
+                Built for Saylani Hackathon 2026
+            </span>
+
+        </div>
+
+    </footer>
+
+    <script src="js/auth.js"></script>
+    <script src="js/services.js"></script>
+
+</body>
+
+</html>
+
